@@ -47,7 +47,7 @@ const AboutPage = () => {
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
               <Avatar
-                alt="Yong Jin"
+                alt="Yong Jin Yit"
                 src="/profile-image.jpg"
                 sx={{
                   width: 200,
@@ -60,12 +60,11 @@ const AboutPage = () => {
 
             <Grid item xs={12} md={8}>
               <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-                Yong Jin
+                Yong Jin Yit
               </Typography>
 
               <Typography variant="body1" paragraph sx={{ mb: 3 }}>
-                I'm a passionate developer who created this MySQL Visualization Tool to make database management easier and more intuitive.
-                This tool allows users to interact with MySQL databases without writing SQL queries, making database operations more accessible to everyone.
+                I created this just for fun, use at your own risk.
               </Typography>
 
               <Button
@@ -84,7 +83,7 @@ const AboutPage = () => {
 
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary" sx={{ color: '#cbd5e1' }}>
-            © {new Date().getFullYear()} Yong Jin. All rights reserved.
+            © {new Date().getFullYear()} Yong Jin Yit. All rights reserved.
           </Typography>
         </Box>
       </Container>
