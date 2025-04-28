@@ -109,6 +109,42 @@ app.post('/api/databases', async (req, res) => {
   }
 });
 
+// Delete a database
+app.delete('/api/databases/:databaseName', async (req, res) => {
+  const { databaseName } = req.params;
+
+  // Prevent deletion of system databases
+  const systemDatabases = ['information_schema', 'mysql', 'performance_schema', 'sys'];
+  if (systemDatabases.includes(databaseName)) {
+    return res.status(403).json({
+      error: 'Cannot delete system database'
+    });
+  }
+
+  try {
+    console.log(`Attempting to delete database: ${databaseName}`);
+    const connection = await pool.getConnection();
+
+    // Check if database exists
+    const [existingDbs] = await connection.query('SHOW DATABASES LIKE ?', [databaseName]);
+    if (existingDbs.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Database not found' });
+    }
+
+    // Delete the database
+    await connection.query(`DROP DATABASE \`${databaseName}\``);
+    console.log(`Database ${databaseName} deleted successfully`);
+
+    connection.release();
+    res.json({ message: `Database ${databaseName} deleted successfully` });
+  } catch (error) {
+    console.error('Error deleting database:', error);
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ error: `Failed to delete database: ${error.message}` });
+  }
+});
+
 // Set active database
 app.post('/api/use-database', async (req, res) => {
   const { database } = req.body;

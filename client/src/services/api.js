@@ -20,6 +20,11 @@ export const createDatabase = async (databaseName) => {
   return response.data;
 };
 
+export const deleteDatabase = async (databaseName) => {
+  const response = await api.delete(`/databases/${databaseName}`);
+  return response.data;
+};
+
 export const useDatabase = async (database) => {
   const response = await api.post('/use-database', { database });
   return response.data;
