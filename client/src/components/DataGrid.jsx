@@ -16,20 +16,17 @@ import {
   TextField,
   Pagination,
   Stack,
-  IconButton,
-  Tooltip,
   MenuItem,
   Select,
   FormControl,
   InputLabel,
-  FormHelperText
+  FormHelperText,
+  Divider
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Cancel';
 import {
   getTableData,
   getTableStructure,
@@ -52,6 +49,8 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
   const [newRecord, setNewRecord] = useState({});
   const [editingCell, setEditingCell] = useState(null); // Track which cell is being edited
   const [editValue, setEditValue] = useState(''); // Store the current edit value
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Control edit dialog visibility
+  const [editingRow, setEditingRow] = useState(null); // Store the row being edited
   const [relatedRecords, setRelatedRecords] = useState([]); // Store related records for adding
   const [foreignKeyData, setForeignKeyData] = useState({}); // Store foreign key reference data
   const [referencingTables, setReferencingTables] = useState({}); // Store tables that reference this table
@@ -344,15 +343,19 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
   };
 
   // Start editing a cell
-  const handleStartEditing = (rowIndex, field, value) => {
+  const handleStartEditing = (rowIndex, field, value, row) => {
     setEditingCell({ rowIndex, field });
     setEditValue(value !== null && value !== undefined ? String(value) : '');
+    setEditingRow(row);
+    setIsEditDialogOpen(true);
   };
 
   // Cancel editing
   const handleCancelEditing = () => {
     setEditingCell(null);
     setEditValue('');
+    setEditingRow(null);
+    setIsEditDialogOpen(false);
   };
 
   // Save the edited cell value
@@ -382,6 +385,8 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
       // Reset editing state
       setEditingCell(null);
       setEditValue('');
+      setEditingRow(null);
+      setIsEditDialogOpen(false);
 
       // Refresh the data
       fetchTableData(pagination.page);
@@ -416,6 +421,8 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
             // Reset editing state
             setEditingCell(null);
             setEditValue('');
+            setEditingRow(null);
+            setIsEditDialogOpen(false);
 
             // Refresh the data
             fetchTableData(pagination.page);
@@ -743,53 +750,16 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                         }}
                         title={formatValue(row[col.field], '')} // Add tooltip with full content
                       >
-                        {editingCell && editingCell.rowIndex === rowIndex && editingCell.field === col.field ? (
-                          // Editing mode
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <TextField
-                              variant="standard"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              autoFocus
-                              fullWidth
-                              size="small"
-                              sx={{ mr: 1 }}
-                              type={(() => {
-                                const column = tableStructure.find(c => c.Field === col.field);
-                                if (!column) return 'text';
-                                const inputType = getEditorType(column.Type);
-                                return typeof inputType === 'string' ? inputType : 'text';
-                              })()}
-                            />
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleSaveEdit(row)}
-                              sx={{ p: 0.5 }}
-                            >
-                              <SaveIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              color="default"
-                              onClick={handleCancelEditing}
-                              sx={{ p: 0.5 }}
-                            >
-                              <CancelIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        ) : (
-                          // Display mode
-                          <Box
-                            sx={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              width: '100%',
-                              cursor: 'pointer',
-                              minHeight: '24px' // Ensure empty cells have height
-                            }}
-                            onClick={(e) => {
+                        <Box
+                          sx={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            width: '100%',
+                            cursor: 'pointer',
+                            minHeight: '24px' // Ensure empty cells have height
+                          }}
+                          onClick={(e) => {
                               // Show popup with full content on click
                               const value = row[col.field];
                               const isNull = value === null || value === undefined;
@@ -821,24 +791,6 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                               }
                               popup.appendChild(contentElement);
 
-                              // Add edit button
-                              const editBtn = document.createElement('button');
-                              editBtn.innerText = 'Edit';
-                              editBtn.className = 'edit-button';
-                              editBtn.style.marginRight = '8px';
-                              editBtn.style.backgroundColor = '#2196f3';
-                              editBtn.style.color = 'white';
-                              editBtn.style.fontWeight = 'bold';
-                              editBtn.style.padding = '8px 16px';
-                              editBtn.style.border = 'none';
-                              editBtn.style.borderRadius = '4px';
-                              editBtn.style.cursor = 'pointer';
-                              editBtn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-                              editBtn.onclick = () => {
-                                document.body.removeChild(popup);
-                                handleStartEditing(rowIndex, col.field, row[col.field]);
-                              };
-
                               // Add close button
                               const closeBtn = document.createElement('button');
                               closeBtn.innerText = 'Close';
@@ -854,7 +806,6 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                               buttonsContainer.style.justifyContent = 'center';
                               buttonsContainer.style.marginTop = '15px';
 
-                              buttonsContainer.appendChild(editBtn);
                               buttonsContainer.appendChild(closeBtn);
 
                               popup.appendChild(document.createElement('br'));
@@ -877,7 +828,6 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                               <span style={{ color: '#999', fontStyle: 'italic' }}>(null)</span> :
                               formatValue(row[col.field], '')}
                           </Box>
-                        )}
                       </td>
                     ))}
                     <td style={{
@@ -886,22 +836,7 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                       width: '120px',
                       minWidth: '120px'
                     }}>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          onClick={() => handleStartEditing(rowIndex, Object.keys(row).find(key => key !== 'actions'), row[Object.keys(row).find(key => key !== 'actions')])}
-                          sx={{
-                            minWidth: 'auto',
-                            p: '4px 8px',
-                            borderRadius: 1.5,
-                            fontWeight: 500,
-                            fontSize: '0.75rem'
-                          }}
-                        >
-                          Edit
-                        </Button>
+                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         <Button
                           size="small"
                           variant="outlined"
@@ -1192,6 +1127,171 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
             disableElevation
           >
             Add Record
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={isEditDialogOpen}
+        onClose={handleCancelEditing}
+        maxWidth="md"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 3,
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          py: 2,
+          px: 3
+        }}>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            Edit Field
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ py: 3, px: 3 }}>
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.15)'
+              }}
+              variant="filled"
+            >
+              {error}
+            </Alert>
+          )}
+
+          {editingCell && editingRow && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                Editing {editingCell.field} for record with {primaryKey} = {editingRow[primaryKey]}
+              </Typography>
+
+              <Box sx={{
+                p: 2,
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                mb: 3
+              }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  <strong>Current Value:</strong> {
+                    editingRow[editingCell.field] === null || editingRow[editingCell.field] === undefined
+                      ? <span style={{ fontStyle: 'italic', color: '#999' }}>(null)</span>
+                      : formatValue(editingRow[editingCell.field], '')
+                  }
+                </Typography>
+              </Box>
+
+              {(() => {
+                // Get the column definition
+                const column = tableStructure.find(c => c.Field === editingCell.field);
+
+                // Check if this is a foreign key field
+                if (column && column.isForeignKey && foreignKeyData && foreignKeyData[column.Field]) {
+                  const fkData = foreignKeyData[column.Field];
+                  return (
+                    <FormControl
+                      fullWidth
+                      sx={{ mt: 1 }}
+                    >
+                      <InputLabel id={`edit-${column.Field}-label`}>
+                        New Value
+                      </InputLabel>
+                      <Select
+                        labelId={`edit-${column.Field}-label`}
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        label="New Value"
+                      >
+                        <MenuItem value="">
+                          <em>None</em>
+                        </MenuItem>
+                        {fkData.data && fkData.data.map(item => (
+                          <MenuItem
+                            key={item[fkData.referencedColumn]}
+                            value={String(item[fkData.referencedColumn])}
+                          >
+                            {/* Display the referenced column value and any descriptive fields if available */}
+                            {item[fkData.referencedColumn]}
+                            {item.name ? ` - ${item.name}` : ''}
+                            {item.title ? ` - ${item.title}` : ''}
+                            {item.description ? ` - ${item.description}` : ''}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormHelperText>
+                        Foreign key to {fkData.referencedTable}.{fkData.referencedColumn}
+                      </FormHelperText>
+                    </FormControl>
+                  );
+                }
+
+                // For regular fields, determine the input type
+                const inputType = column ? getEditorType(column.Type) : 'text';
+
+                return (
+                  <TextField
+                    label="New Value"
+                    variant="outlined"
+                    fullWidth
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    autoFocus
+                    type={typeof inputType === 'string' ? inputType : 'text'}
+                    multiline={column && (column.Type.includes('text') || column.Type.includes('json'))}
+                    rows={column && (column.Type.includes('text') || column.Type.includes('json')) ? 4 : 1}
+                    sx={{ mt: 1 }}
+                    helperText={column ? `Field type: ${column.Type}` : ''}
+                  />
+                );
+              })()}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          px: 3,
+          py: 2
+        }}>
+          <Button
+            onClick={handleCancelEditing}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 500
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleSaveEdit(editingRow)}
+            variant="contained"
+            color="primary"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 600,
+              boxShadow: 'none',
+              '&:hover': {
+                boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
+              }
+            }}
+            disableElevation
+          >
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>

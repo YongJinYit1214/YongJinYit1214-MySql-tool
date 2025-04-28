@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
-  Button, 
+import {
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
   Typography,
   CircularProgress,
   Alert
@@ -42,7 +42,7 @@ const DatabaseSelector = ({ onDatabaseSelected }) => {
 
   const handleConnect = async () => {
     if (!selectedDatabase) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -57,25 +57,55 @@ const DatabaseSelector = ({ onDatabaseSelected }) => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', p: 2 }}>
-      <Typography variant="h5" gutterBottom>
+    <Box sx={{ maxWidth: 800, mx: 'auto', p: 4 }}>
+      <Typography variant="h5" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
         Select MySQL Database
       </Typography>
-      
+
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert
+          severity="error"
+          sx={{
+            mb: 3,
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.15)'
+          }}
+          variant="filled"
+        >
           {error}
         </Alert>
       )}
-      
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <FormControl fullWidth>
+
+      <Box sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        alignItems: 'center',
+        gap: 2
+      }}>
+        <FormControl
+          fullWidth
+          sx={{
+            minWidth: { xs: '100%', md: 400 },
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2
+            }
+          }}
+        >
           <InputLabel>Database</InputLabel>
           <Select
             value={selectedDatabase}
             label="Database"
             onChange={handleDatabaseChange}
             disabled={loading}
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  maxHeight: 300,
+                  width: 'auto',
+                  minWidth: 400
+                }
+              }
+            }}
           >
             {databases.map((db) => (
               <MenuItem key={db} value={db}>
@@ -84,23 +114,46 @@ const DatabaseSelector = ({ onDatabaseSelected }) => {
             ))}
           </Select>
         </FormControl>
-        
-        <Button
-          variant="contained"
-          onClick={handleConnect}
-          disabled={!selectedDatabase || loading}
-          sx={{ minWidth: 120 }}
-        >
-          {loading ? <CircularProgress size={24} /> : 'Connect'}
-        </Button>
-        
-        <Button
-          variant="outlined"
-          onClick={fetchDatabases}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
+
+        <Box sx={{
+          display: 'flex',
+          gap: 2,
+          width: { xs: '100%', md: 'auto' }
+        }}>
+          <Button
+            variant="contained"
+            onClick={handleConnect}
+            disabled={!selectedDatabase || loading}
+            sx={{
+              minWidth: 120,
+              borderRadius: 2,
+              py: 1,
+              fontWeight: 600,
+              boxShadow: 'none',
+              flex: { xs: 1, md: 'none' },
+              '&:hover': {
+                boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
+              }
+            }}
+            disableElevation
+          >
+            {loading ? <CircularProgress size={24} /> : 'Connect'}
+          </Button>
+
+          <Button
+            variant="outlined"
+            onClick={fetchDatabases}
+            disabled={loading}
+            sx={{
+              borderRadius: 2,
+              py: 1,
+              fontWeight: 500,
+              flex: { xs: 1, md: 'none' }
+            }}
+          >
+            Refresh
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

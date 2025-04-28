@@ -9,8 +9,7 @@ import {
   Typography,
   AppBar,
   Toolbar,
-  Button,
-  IconButton
+  Button
 } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -46,6 +45,24 @@ const MainPage = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             MySQL Visualization Tool
           </Typography>
+
+          {database && (
+            <Button
+              variant="outlined"
+              color="inherit"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => setDatabase(null)}
+              sx={{
+                borderColor: 'rgba(255,255,255,0.5)',
+                '&:hover': {
+                  borderColor: 'rgba(255,255,255,0.8)',
+                  backgroundColor: 'rgba(255,255,255,0.1)'
+                }
+              }}
+            >
+              Back to Database Selection
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 
