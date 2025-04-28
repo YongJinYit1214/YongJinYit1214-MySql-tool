@@ -1,74 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
 }
 
 /* AG Grid customizations */
 .ag-theme-alpine {
-  --ag-header-height: 40px;
-  --ag-header-foreground-color: #333;
-  --ag-header-background-color: #f5f5f5;
-  --ag-row-hover-color: rgba(33, 150, 243, 0.1);
-  --ag-selected-row-background-color: rgba(33, 150, 243, 0.2);
+  --ag-header-height: 48px;
+  --ag-header-foreground-color: #1e293b;
+  --ag-header-background-color: #f8fafc;
+  --ag-row-hover-color: rgba(37, 99, 235, 0.05);
+  --ag-selected-row-background-color: rgba(37, 99, 235, 0.1);
+  --ag-font-size: 14px;
+  --ag-font-family: 'Inter', sans-serif;
+  --ag-border-color: #e2e8f0;
+  --ag-cell-horizontal-padding: 16px;
+  --ag-cell-vertical-padding: 12px;
+  --ag-row-border-color: #f1f5f9;
   height: 100%;
   width: 100%;
   display: flex;
   flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .ag-root-wrapper {
   flex: 1;
   min-height: 0;
+  border: none !important;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .ag-center-cols-container {
   width: 100% !important;
 }
 
+.ag-header-cell {
+  font-weight: 600 !important;
+  color: #1e293b !important;
+}
+
+.ag-row {
+  transition: background-color 0.2s ease;
+}
+
+.ag-row-even {
+  background-color: #ffffff;
+}
+
+.ag-row-odd {
+  background-color: #f8fafc;
+}
+
 /* Custom button styles for AG Grid */
 .btn-delete {
-  background-color: #f44336;
+  background-color: #ef4444;
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
+  border-radius: 6px;
+  padding: 6px 12px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .btn-delete:hover {
-  background-color: #d32f2f;
+  background-color: #dc2626;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.btn-delete:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-edit {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  margin-right: 8px;
+}
+
+.btn-edit:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.btn-edit:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #f1f5f9;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  background: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #94a3b8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Apply animations */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-in-out;
+}
+
+.slide-down {
+  animation: slideDown 0.3s ease-in-out;
 }
 
 /* Table cell hover effect */
 td[title]:hover, th[title]:hover {
-  background-color: rgba(33, 150, 243, 0.1);
+  background-color: rgba(37, 99, 235, 0.05);
   transition: background-color 0.2s;
 }
 
 /* Table header styles */
 th[title] {
   position: relative;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
 }
 
 th[title]::after {
@@ -78,57 +196,101 @@ th[title]::after {
   left: 0;
   width: 100%;
   height: 2px;
-  background-color: rgba(33, 150, 243, 0.5);
+  background-color: #2563eb;
   transform: scaleX(0);
-  transition: transform 0.2s;
+  transition: transform 0.2s ease;
 }
 
 th[title]:hover::after {
   transform: scaleX(1);
 }
 
+/* Table styles */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  transition: background-color 0.2s ease;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:nth-child(even) {
+  background-color: #ffffff;
+}
+
+tr:nth-child(odd) {
+  background-color: #f8fafc;
+}
+
+tr:hover td {
+  background-color: rgba(37, 99, 235, 0.05);
+}
+
 /* Popup styles */
 .cell-content-popup {
   position: fixed;
   background-color: white;
-  border: 1px solid #ccc;
-  padding: 15px;
-  border-radius: 6px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  border: none;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   z-index: 1000;
   max-width: 450px;
-  min-width: 250px;
+  min-width: 280px;
   word-break: break-word;
-  line-height: 1.5;
+  line-height: 1.6;
   font-size: 14px;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .cell-content-popup strong {
-  color: #333;
+  color: #1e293b;
+  font-weight: 600;
 }
 
 .cell-content-popup button {
-  margin-top: 15px;
-  padding: 6px 12px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  margin-top: 16px;
+  padding: 8px 16px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s;
   display: block;
   margin-left: auto;
   margin-right: auto;
+  font-size: 14px;
 }
 
 .cell-content-popup button:hover {
-  background-color: #e0e0e0;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.cell-content-popup button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* Editable cell styles */
 .editable-cell {
   position: relative;
+  cursor: pointer;
 }
 
 .editable-cell:hover .edit-icon {
@@ -138,33 +300,106 @@ th[title]:hover::after {
 .edit-icon {
   opacity: 0;
   transition: opacity 0.2s;
+  color: #2563eb;
+  margin-left: 8px;
 }
 
 .editing-cell {
-  background-color: rgba(33, 150, 243, 0.1);
-  border: 1px solid rgba(33, 150, 243, 0.3);
+  background-color: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 6px;
+  padding: 8px;
 }
 
 /* Edit button styles */
 .edit-button {
-  background-color: #2196f3 !important;
+  background-color: #2563eb !important;
   color: white !important;
-  font-weight: bold !important;
+  font-weight: 600 !important;
   padding: 8px 16px !important;
   border: none !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
-  transition: background-color 0.2s, transform 0.1s !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+  text-transform: none !important;
+  font-size: 14px !important;
+  letter-spacing: 0 !important;
 }
 
 .edit-button:hover {
-  background-color: #1976d2 !important;
+  background-color: #1d4ed8 !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 
 .edit-button:active {
   transform: translateY(1px) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Card styles */
+.card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+/* Form styles */
+.form-control {
+  margin-bottom: 16px;
+}
+
+.form-control label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.form-control input,
+.form-control select,
+.form-control textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-control input:focus,
+.form-control select:focus,
+.form-control textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Dialog styles */
+.MuiDialog-paper {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.MuiDialogTitle-root {
+  background-color: #f8fafc !important;
+  padding: 16px 24px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.MuiDialogContent-root {
+  padding: 24px !important;
+}
+
+.MuiDialogActions-root {
+  padding: 16px 24px !important;
+  border-top: 1px solid #e2e8f0 !important;
 }

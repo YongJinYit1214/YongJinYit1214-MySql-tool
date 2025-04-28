@@ -445,19 +445,53 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
   }
 
   return (
-    <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 1, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Paper sx={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      borderRadius: 2,
+      overflow: 'hidden',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+    }} className="fade-in">
+      <Box sx={{
+        p: 2,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        bgcolor: 'background.paper'
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Button
             variant="outlined"
             startIcon={<ArrowBackIcon />}
             onClick={() => onBackToTables()}
-            sx={{ mr: 2, py: 0.5 }}
+            sx={{
+              mr: 2,
+              borderRadius: 2,
+              fontWeight: 500,
+              px: 2
+            }}
             size="small"
           >
             Back
           </Button>
-          <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>
+          <Typography variant="h6" sx={{
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            color: 'text.primary',
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <Box component="span" sx={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              display: 'inline-block',
+              mr: 1.5
+            }} />
             {tableName}
           </Typography>
         </Box>
@@ -467,7 +501,11 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={() => fetchTableData(pagination.page)}
-            sx={{ mr: 1, py: 0.5 }}
+            sx={{
+              mr: 2,
+              borderRadius: 2,
+              fontWeight: 500
+            }}
             size="small"
           >
             Refresh
@@ -477,8 +515,13 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setIsAddDialogOpen(true)}
-            sx={{ py: 0.5 }}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 500,
+              boxShadow: 'none'
+            }}
             size="small"
+            disableElevation
           >
             Add Record
           </Button>
@@ -486,39 +529,78 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ m: 2 }}>
+        <Alert
+          severity="error"
+          sx={{
+            m: 2,
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.15)'
+          }}
+          variant="filled"
+        >
           {error}
         </Alert>
       )}
 
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-          <CircularProgress />
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          p: 4,
+          height: '100px'
+        }}>
+          <CircularProgress size={40} thickness={4} />
         </Box>
       )}
 
-      <Box sx={{ width: '100%', overflow: 'auto', mt: 0, pt: 0 }}>
+      <Box sx={{
+        width: '100%',
+        overflow: 'auto',
+        mt: 0,
+        pt: 0,
+        flexGrow: 1,
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
 
         {/* Data table display */}
         {rowData.length > 0 && columnDefs.length > 0 ? (
-          <Box sx={{ overflowX: 'auto', mt: 0, maxWidth: '100%' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+          <Box sx={{
+            overflowX: 'auto',
+            mt: 0,
+            maxWidth: '100%',
+            flexGrow: 1,
+            px: 2
+          }} className="slide-up">
+            <table style={{
+              width: '100%',
+              borderCollapse: 'separate',
+              borderSpacing: 0,
+              tableLayout: 'fixed',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)'
+            }}>
               <thead>
                 <tr>
                   {columnDefs.filter(col => col.field !== 'actions').map(col => (
                     <th
                       key={col.field}
                       style={{
-                        padding: '8px',
-                        borderBottom: '1px solid #ddd',
+                        padding: '12px 16px',
+                        borderBottom: '1px solid #e2e8f0',
                         textAlign: 'left',
-                        backgroundColor: '#f5f5f5',
+                        backgroundColor: '#f8fafc',
                         maxWidth: '200px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                         cursor: 'pointer',
-                        position: 'relative'
+                        position: 'relative',
+                        fontWeight: 600,
+                        color: '#1e293b',
+                        fontSize: '14px'
                       }}
                       title={col.headerName} // Add tooltip to header
                       onClick={(e) => {
@@ -614,13 +696,16 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                   ))}
                   <th
                     style={{
-                      padding: '8px',
-                      borderBottom: '1px solid #ddd',
+                      padding: '12px 16px',
+                      borderBottom: '1px solid #e2e8f0',
                       textAlign: 'left',
-                      backgroundColor: '#f5f5f5',
-                      width: '100px',
-                      minWidth: '100px',
-                      cursor: 'pointer'
+                      backgroundColor: '#f8fafc',
+                      width: '120px',
+                      minWidth: '120px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      color: '#1e293b',
+                      fontSize: '14px'
                     }}
                     title="Actions"
                   >
@@ -630,21 +715,30 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
               </thead>
               <tbody>
                 {rowData.map((row, rowIndex) => (
-                  <tr key={rowIndex} style={{ backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9f9f9' }}>
+                  <tr
+                    key={rowIndex}
+                    style={{
+                      backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc',
+                      transition: 'background-color 0.2s ease'
+                    }}
+                  >
                     {columnDefs.filter(col => col.field !== 'actions').map(col => (
                       <td
                         key={`${rowIndex}-${col.field}`}
                         style={{
-                          padding: '8px',
-                          borderBottom: '1px solid #ddd',
+                          padding: '12px 16px',
+                          borderBottom: '1px solid #f1f5f9',
                           maxWidth: '200px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                           position: 'relative',
                           cursor: 'pointer',
+                          color: '#1e293b',
+                          fontSize: '14px',
+                          transition: 'background-color 0.2s ease',
                           backgroundColor: editingCell && editingCell.rowIndex === rowIndex && editingCell.field === col.field
-                            ? 'rgba(33, 150, 243, 0.1)'
+                            ? 'rgba(37, 99, 235, 0.05)'
                             : 'inherit'
                         }}
                         title={formatValue(row[col.field], '')} // Add tooltip with full content
@@ -787,20 +881,43 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                       </td>
                     ))}
                     <td style={{
-                      padding: '8px',
-                      borderBottom: '1px solid #ddd',
-                      width: '100px',
-                      minWidth: '100px'
+                      padding: '12px 16px',
+                      borderBottom: '1px solid #f1f5f9',
+                      width: '120px',
+                      minWidth: '120px'
                     }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        onClick={() => handleDeleteRecord(row)}
-                        sx={{ minWidth: 'auto', p: '4px 8px' }}
-                      >
-                        Delete
-                      </Button>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                          onClick={() => handleStartEditing(rowIndex, Object.keys(row).find(key => key !== 'actions'), row[Object.keys(row).find(key => key !== 'actions')])}
+                          sx={{
+                            minWidth: 'auto',
+                            p: '4px 8px',
+                            borderRadius: 1.5,
+                            fontWeight: 500,
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          onClick={() => handleDeleteRecord(row)}
+                          sx={{
+                            minWidth: 'auto',
+                            p: '4px 8px',
+                            borderRadius: 1.5,
+                            fontWeight: 500,
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Box>
                     </td>
                   </tr>
                 ))}
@@ -814,9 +931,21 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
         )}
       </Box>
 
-      <Box sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #eee' }}>
-        <Typography variant="body2" color="text.secondary">
-          Showing {rowData.length} of {pagination.total} records
+      <Box sx={{
+        p: 2,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTop: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper'
+      }}>
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+          {pagination.total > 0 ? (
+            `Showing ${(pagination.page - 1) * pagination.limit + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} records`
+          ) : (
+            'No records found'
+          )}
         </Typography>
 
         <Pagination
@@ -824,42 +953,124 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
           page={pagination.page}
           onChange={handlePageChange}
           color="primary"
-          size="small"
+          size="medium"
+          shape="rounded"
+          showFirstButton
+          showLastButton
+          sx={{
+            '& .MuiPaginationItem-root': {
+              borderRadius: 1.5,
+              fontWeight: 500
+            }
+          }}
         />
       </Box>
 
       {/* Add Record Dialog */}
-      <Dialog open={isAddDialogOpen} onClose={() => setIsAddDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Add New Record to {tableName}</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 3,
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          py: 2,
+          px: 3
+        }}>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            Add New Record to {tableName}
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ py: 3, px: 3 }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2, mt: 1 }}>
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.15)'
+              }}
+              variant="filled"
+            >
               {error}
             </Alert>
           )}
 
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Fields marked with * are required. Auto-increment fields are disabled.
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', display: 'block', mb: 1 }}>Instructions:</Box>
+            Fields marked with <Box component="span" sx={{ color: 'error.main', fontWeight: 600 }}>*</Box> are required. Auto-increment fields are disabled.
           </Typography>
 
           {showRelatedTables && Object.keys(referencingTables).length > 0 && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                This table is referenced by other tables
-              </Typography>
-              <Typography variant="body2">
+            <Alert
+              severity="info"
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                boxShadow: '0 2px 8px rgba(14, 165, 233, 0.15)'
+              }}
+              icon={false}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}>
+                <Box
+                  component="span"
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    bgcolor: 'info.light',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    mr: 1.5,
+                    fontSize: '14px'
+                  }}
+                >
+                  i
+                </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'info.dark' }}>
+                  This table is referenced by other tables
+                </Typography>
+              </Box>
+
+              <Typography variant="body2" sx={{ ml: 5, mb: 1.5 }}>
                 When you add a record to this table, you may need to add related records to the following tables (if applicable to your data model):
               </Typography>
-              <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
-                {Object.keys(referencingTables).map(refTable => (
-                  <li key={refTable}>
-                    <strong>{refTable}</strong> - References {referencingTables[refTable].map(col =>
-                      `${col.column} → ${col.referencedColumn}`
-                    ).join(', ')}
-                  </li>
-                ))}
-              </ul>
-              <Typography variant="body2">
+
+              <Box sx={{
+                ml: 5,
+                mb: 1.5,
+                p: 1.5,
+                bgcolor: 'background.paper',
+                borderRadius: 1.5,
+                border: '1px solid',
+                borderColor: 'info.light'
+              }}>
+                <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                  {Object.keys(referencingTables).map(refTable => (
+                    <li key={refTable} style={{ marginBottom: '4px' }}>
+                      <Typography component="span" sx={{ fontWeight: 600 }}>{refTable}</Typography> - References {referencingTables[refTable].map(col =>
+                        <Typography component="span" key={col.column}>
+                          <Typography component="span" sx={{ fontWeight: 500 }}>{col.column}</Typography> → {col.referencedColumn}
+                        </Typography>
+                      ).join(', ')}
+                    </li>
+                  ))}
+                </ul>
+              </Box>
+
+              <Typography variant="body2" sx={{ ml: 5, fontStyle: 'italic', color: 'text.secondary' }}>
                 After adding this record, you may need to add corresponding records to these tables if your application requires them.
               </Typography>
             </Alert>
@@ -944,18 +1155,41 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
             })}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            setIsAddDialogOpen(false);
-            setError(null);
-            setNewRecord({});
-          }}>
+        <DialogActions sx={{
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          px: 3,
+          py: 2
+        }}>
+          <Button
+            onClick={() => {
+              setIsAddDialogOpen(false);
+              setError(null);
+              setNewRecord({});
+            }}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 500
+            }}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleAddRecord}
             variant="contained"
             color="primary"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 600,
+              boxShadow: 'none',
+              '&:hover': {
+                boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
+              }
+            }}
+            disableElevation
           >
             Add Record
           </Button>
