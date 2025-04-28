@@ -3,25 +3,25 @@
  */
 export const formatValue = (value, type) => {
   if (value === null || value === undefined) {
-    return '';
+    return '(null)';
   }
-  
+
   if (type === 'datetime' || type === 'timestamp') {
     return new Date(value).toLocaleString();
   }
-  
+
   if (type === 'date') {
     return new Date(value).toLocaleDateString();
   }
-  
+
   if (type === 'time') {
     return value;
   }
-  
+
   if (typeof value === 'object') {
     return JSON.stringify(value);
   }
-  
+
   return String(value);
 };
 
@@ -30,31 +30,31 @@ export const formatValue = (value, type) => {
  */
 export const getEditorType = (columnType) => {
   const type = columnType.toLowerCase();
-  
+
   if (type.includes('int')) {
     return 'number';
   }
-  
+
   if (type.includes('decimal') || type.includes('float') || type.includes('double')) {
     return 'number';
   }
-  
+
   if (type.includes('date') && !type.includes('datetime')) {
     return 'date';
   }
-  
+
   if (type.includes('datetime') || type.includes('timestamp')) {
     return 'datetime-local';
   }
-  
+
   if (type.includes('time') && !type.includes('timestamp')) {
     return 'time';
   }
-  
+
   if (type.includes('text') || type.includes('blob')) {
     return 'textarea';
   }
-  
+
   if (type.includes('enum') || type.includes('set')) {
     // Extract options from enum/set type, e.g., "enum('a','b','c')" -> ['a', 'b', 'c']
     const match = type.match(/enum\('(.+?)'\)/i) || type.match(/set\('(.+?)'\)/i);
@@ -66,7 +66,7 @@ export const getEditorType = (columnType) => {
       };
     }
   }
-  
+
   return 'text';
 };
 
@@ -86,20 +86,20 @@ export const convertValueForColumn = (value, columnType) => {
   if (value === null || value === undefined || value === '') {
     return null;
   }
-  
+
   const type = columnType.toLowerCase();
-  
+
   if (type.includes('int')) {
     return parseInt(value, 10);
   }
-  
+
   if (type.includes('decimal') || type.includes('float') || type.includes('double')) {
     return parseFloat(value);
   }
-  
+
   if (type.includes('date') || type.includes('time')) {
     return value; // Let MySQL handle the date/time formatting
   }
-  
+
   return value;
 };

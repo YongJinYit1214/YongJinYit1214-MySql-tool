@@ -31,6 +31,11 @@ export const getTableStructure = async (tableName) => {
   return response.data;
 };
 
+export const getReferencedData = async (tableName, columnName) => {
+  const response = await api.get(`/tables/${tableName}/referenced-data/${columnName}`);
+  return response.data;
+};
+
 export const getTableData = async (tableName, params = {}) => {
   const { page = 1, limit = 100, sort, order, filter } = params;
 
@@ -49,18 +54,30 @@ export const getTableData = async (tableName, params = {}) => {
 };
 
 // Data manipulation
-export const updateRecord = async (tableName, id, data) => {
-  const response = await api.put(`/tables/${tableName}/data/${id}`, data);
+export const updateRecord = async (tableName, id, data, force = false) => {
+  const url = force
+    ? `/tables/${tableName}/data/${id}?force=true`
+    : `/tables/${tableName}/data/${id}`;
+
+  const response = await api.put(url, data);
   return response.data;
 };
 
-export const createRecord = async (tableName, data) => {
-  const response = await api.post(`/tables/${tableName}/data`, data);
+export const createRecord = async (tableName, data, relatedRecords = null) => {
+  const payload = relatedRecords
+    ? { data, relatedRecords }
+    : data;
+
+  const response = await api.post(`/tables/${tableName}/data`, payload);
   return response.data;
 };
 
-export const deleteRecord = async (tableName, id) => {
-  const response = await api.delete(`/tables/${tableName}/data/${id}`);
+export const deleteRecord = async (tableName, id, force = false) => {
+  const url = force
+    ? `/tables/${tableName}/data/${id}?force=true`
+    : `/tables/${tableName}/data/${id}`;
+
+  const response = await api.delete(url);
   return response.data;
 };
 

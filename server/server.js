@@ -136,15 +136,90 @@ app.get('/api/tables', async (req, res) => {
 app.get('/api/tables/:tableName/structure', async (req, res) => {
   const { tableName } = req.params;
 
+  console.log(`Attempting to get structure for table: ${tableName}`);
+
   try {
     const connection = await pool.getConnection();
-    const [rows] = await connection.query(`DESCRIBE \`${tableName}\``);
-    connection.release();
+    console.log(`Connection obtained for table structure`);
 
-    res.json(rows);
+    // Get basic table structure
+    console.log(`Executing DESCRIBE query for ${tableName}`);
+    const [rows] = await connection.query(`DESCRIBE \`${tableName}\``);
+    console.log(`Retrieved ${rows.length} columns for table ${tableName}`);
+
+    // Get foreign key information (outgoing references)
+    console.log(`Getting foreign key information for ${tableName}`);
+    const [foreignKeys] = await connection.query(`
+      SELECT
+        COLUMN_NAME as \`column\`,
+        REFERENCED_TABLE_NAME as referencedTable,
+        REFERENCED_COLUMN_NAME as referencedColumn
+      FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+        AND REFERENCED_TABLE_NAME IS NOT NULL
+    `, [tableName]);
+
+    console.log(`Found ${foreignKeys.length} foreign keys for table ${tableName}`);
+
+    // Get tables that reference this table (incoming references)
+    console.log(`Getting tables that reference ${tableName}`);
+    const [referencingTables] = await connection.query(`
+      SELECT
+        TABLE_NAME as referencingTable,
+        COLUMN_NAME as referencingColumn,
+        REFERENCED_COLUMN_NAME as referencedColumn
+      FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND REFERENCED_TABLE_NAME = ?
+    `, [tableName]);
+
+    console.log(`Found ${referencingTables.length} tables that reference ${tableName}`);
+
+    // Find primary key
+    const primaryKey = rows.find(row => row.Key === 'PRI');
+    const primaryKeyName = primaryKey ? primaryKey.Field : null;
+
+    // Group referencing tables by the table name
+    const groupedReferencingTables = {};
+    referencingTables.forEach(ref => {
+      if (!groupedReferencingTables[ref.referencingTable]) {
+        groupedReferencingTables[ref.referencingTable] = [];
+      }
+      groupedReferencingTables[ref.referencingTable].push({
+        column: ref.referencingColumn,
+        referencedColumn: ref.referencedColumn
+      });
+    });
+
+    // Enhance the structure with foreign key information
+    const enhancedStructure = rows.map(row => {
+      const fk = foreignKeys.find(fk => fk.column === row.Field);
+      if (fk) {
+        console.log(`Column ${row.Field} is a foreign key referencing ${fk.referencedTable}.${fk.referencedColumn}`);
+        return {
+          ...row,
+          isForeignKey: true,
+          referencedTable: fk.referencedTable,
+          referencedColumn: fk.referencedColumn
+        };
+      }
+      return row;
+    });
+
+    connection.release();
+    console.log(`Connection released for table structure`);
+    console.log(`Sending structure response with ${enhancedStructure.length} columns`);
+
+    res.json({
+      columns: enhancedStructure,
+      primaryKey: primaryKeyName,
+      referencingTables: groupedReferencingTables
+    });
   } catch (error) {
     console.error(`Error fetching structure for table ${tableName}:`, error);
-    res.status(500).json({ error: `Failed to fetch structure for table ${tableName}` });
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ error: `Failed to fetch structure for table ${tableName}: ${error.message}` });
   }
 });
 
@@ -250,6 +325,7 @@ app.post('/api/query', async (req, res) => {
 app.put('/api/tables/:tableName/data/:id', async (req, res) => {
   const { tableName, id } = req.params;
   const updateData = req.body;
+  const { force } = req.query; // Add a force parameter to bypass foreign key checks if needed
 
   if (!updateData || Object.keys(updateData).length === 0) {
     return res.status(400).json({ error: 'Update data is required' });
@@ -257,6 +333,29 @@ app.put('/api/tables/:tableName/data/:id', async (req, res) => {
 
   try {
     const connection = await pool.getConnection();
+
+    // Get table structure to validate fields
+    console.log(`Getting structure for table ${tableName} before update`);
+    const [tableStructure] = await connection.query(`DESCRIBE \`${tableName}\``);
+
+    // Get valid column names from the table structure
+    const validColumns = tableStructure.map(col => col.Field);
+    console.log('Valid columns:', validColumns);
+
+    // Filter the input data to only include valid columns
+    const filteredData = {};
+    for (const [key, value] of Object.entries(updateData)) {
+      if (validColumns.includes(key)) {
+        filteredData[key] = value;
+      } else {
+        console.log(`Skipping invalid column: ${key}`);
+      }
+    }
+
+    if (Object.keys(filteredData).length === 0) {
+      connection.release();
+      return res.status(400).json({ error: 'No valid columns provided for update' });
+    }
 
     // Get primary key column
     const [pkResult] = await connection.query(`
@@ -274,40 +373,114 @@ app.put('/api/tables/:tableName/data/:id', async (req, res) => {
 
     const primaryKeyColumn = pkResult[0].COLUMN_NAME;
 
+    // Check if we're updating a primary key that's referenced by other tables
+    if (filteredData[primaryKeyColumn] !== undefined) {
+      // Check for foreign key constraints
+      const [fkConstraints] = await connection.query(`
+        SELECT
+          TABLE_NAME as referencingTable,
+          COLUMN_NAME as referencingColumn,
+          REFERENCED_TABLE_NAME as referencedTable,
+          REFERENCED_COLUMN_NAME as referencedColumn
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+        WHERE REFERENCED_TABLE_SCHEMA = DATABASE()
+          AND REFERENCED_TABLE_NAME = ?
+          AND REFERENCED_COLUMN_NAME = ?
+      `, [tableName, primaryKeyColumn]);
+
+      // If there are foreign key constraints and force is not true, return an error with details
+      if (fkConstraints.length > 0 && force !== 'true') {
+        connection.release();
+        return res.status(409).json({
+          error: 'Cannot update primary key due to foreign key constraints',
+          details: {
+            message: 'This primary key is referenced by other tables. Updating it may cause data inconsistency.',
+            constraints: fkConstraints,
+            solution: 'You can either update the referencing records first, or use force=true parameter to bypass checks (not recommended)'
+          }
+        });
+      }
+    }
+
     // Build update query
-    const setClause = Object.entries(updateData)
+    const setClause = Object.entries(filteredData)
       .map(([column, value]) => `\`${column}\` = ?`)
       .join(', ');
 
-    const values = [...Object.values(updateData), id];
+    const values = [...Object.values(filteredData), id];
 
-    const query = `UPDATE \`${tableName}\` SET ${setClause} WHERE \`${primaryKeyColumn}\` = ?`;
+    let query = `UPDATE \`${tableName}\` SET ${setClause} WHERE \`${primaryKeyColumn}\` = ?`;
+    console.log('Executing update query:', query);
+    console.log('With values:', values);
 
-    const [result] = await connection.query(query, values);
-    connection.release();
+    try {
+      if (force === 'true') {
+        // Temporarily disable foreign key checks if force is true
+        await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+      }
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Record not found' });
+      const [result] = await connection.query(query, values);
+
+      if (force === 'true') {
+        // Re-enable foreign key checks
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+      }
+
+      connection.release();
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Record not found' });
+      }
+
+      res.json({ message: 'Record updated successfully' });
+    } catch (updateError) {
+      if (force === 'true') {
+        // Make sure to re-enable foreign key checks even if there's an error
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+      }
+
+      connection.release();
+
+      // Check if it's a foreign key constraint error
+      if (updateError.code === 'ER_ROW_IS_REFERENCED_2' || updateError.code === 'ER_NO_REFERENCED_ROW_2') {
+        return res.status(409).json({
+          error: 'Cannot update record due to foreign key constraints',
+          details: {
+            message: 'This update violates foreign key constraints. You need to update the referencing records first.',
+            solution: 'You can use force=true parameter to bypass checks (not recommended)'
+          }
+        });
+      }
+
+      throw updateError;
     }
-
-    res.json({ message: 'Record updated successfully' });
   } catch (error) {
     console.error(`Error updating data in table ${tableName}:`, error);
-    res.status(500).json({ error: `Failed to update data in table ${tableName}` });
+    res.status(500).json({
+      error: `Failed to update data in table ${tableName}: ${error.message}`,
+      code: error.code
+    });
   }
 });
 
 // Insert new record
 app.post('/api/tables/:tableName/data', async (req, res) => {
   const { tableName } = req.params;
-  const newData = req.body;
+  const { data: newData, relatedRecords } = req.body;
+  const actualData = newData || req.body; // For backward compatibility
 
-  if (!newData || Object.keys(newData).length === 0) {
+  if (!actualData || Object.keys(actualData).length === 0) {
     return res.status(400).json({ error: 'Data is required' });
   }
 
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
+
+    // Start a transaction if we have related records
+    if (relatedRecords && relatedRecords.length > 0) {
+      await connection.beginTransaction();
+    }
 
     // Get table structure to validate fields
     console.log(`Getting structure for table ${tableName} before insert`);
@@ -319,7 +492,7 @@ app.post('/api/tables/:tableName/data', async (req, res) => {
 
     // Filter the input data to only include valid columns
     const filteredData = {};
-    for (const [key, value] of Object.entries(newData)) {
+    for (const [key, value] of Object.entries(actualData)) {
       if (validColumns.includes(key)) {
         filteredData[key] = value;
       } else {
@@ -328,7 +501,7 @@ app.post('/api/tables/:tableName/data', async (req, res) => {
     }
 
     if (Object.keys(filteredData).length === 0) {
-      connection.release();
+      if (connection) connection.release();
       return res.status(400).json({ error: 'No valid columns provided for insert' });
     }
 
@@ -341,21 +514,95 @@ app.post('/api/tables/:tableName/data', async (req, res) => {
     console.log('With values:', values);
 
     const [result] = await connection.query(query, values);
-    connection.release();
+    const insertedId = result.insertId;
+
+    // Process related records if any
+    const relatedResults = [];
+    if (relatedRecords && relatedRecords.length > 0) {
+      for (const related of relatedRecords) {
+        const { table, data, linkField, linkToField } = related;
+
+        if (!table || !data || Object.keys(data).length === 0) {
+          continue;
+        }
+
+        // Get structure of related table
+        const [relatedTableStructure] = await connection.query(`DESCRIBE \`${table}\``);
+        const relatedValidColumns = relatedTableStructure.map(col => col.Field);
+
+        // Filter the related data
+        const relatedFilteredData = {};
+        for (const [key, value] of Object.entries(data)) {
+          if (relatedValidColumns.includes(key)) {
+            relatedFilteredData[key] = value;
+          }
+        }
+
+        // Add the link field if specified
+        if (linkField && linkToField && relatedValidColumns.includes(linkField)) {
+          // Link to the main record's ID or a specific field
+          const linkValue = linkToField === 'id' ? insertedId : filteredData[linkToField];
+          relatedFilteredData[linkField] = linkValue;
+        }
+
+        if (Object.keys(relatedFilteredData).length === 0) {
+          continue;
+        }
+
+        const relatedColumns = Object.keys(relatedFilteredData).map(col => `\`${col}\``).join(', ');
+        const relatedPlaceholders = Object.keys(relatedFilteredData).map(() => '?').join(', ');
+        const relatedValues = Object.values(relatedFilteredData);
+
+        const relatedQuery = `INSERT INTO \`${table}\` (${relatedColumns}) VALUES (${relatedPlaceholders})`;
+        console.log(`Executing related insert query for ${table}:`, relatedQuery);
+        console.log('With values:', relatedValues);
+
+        const [relatedResult] = await connection.query(relatedQuery, relatedValues);
+        relatedResults.push({
+          table,
+          id: relatedResult.insertId,
+          success: true
+        });
+      }
+    }
+
+    // Commit the transaction if we started one
+    if (relatedRecords && relatedRecords.length > 0) {
+      await connection.commit();
+    }
+
+    if (connection) connection.release();
 
     res.status(201).json({
       message: 'Record created successfully',
-      id: result.insertId
+      id: insertedId,
+      relatedRecords: relatedResults.length > 0 ? relatedResults : undefined
     });
   } catch (error) {
     console.error(`Error inserting data into table ${tableName}:`, error);
-    res.status(500).json({ error: `Failed to insert data into table ${tableName}: ${error.message}` });
+
+    // Rollback the transaction if we started one
+    if (connection && relatedRecords && relatedRecords.length > 0) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Error rolling back transaction:', rollbackError);
+      }
+    }
+
+    if (connection) connection.release();
+
+    res.status(500).json({
+      error: `Failed to insert data into table ${tableName}: ${error.message}`,
+      code: error.code
+    });
   }
 });
 
 // Delete record
 app.delete('/api/tables/:tableName/data/:id', async (req, res) => {
   const { tableName, id } = req.params;
+  const { force } = req.query; // Add a force parameter to bypass foreign key checks if needed
 
   try {
     const connection = await pool.getConnection();
@@ -376,19 +623,144 @@ app.delete('/api/tables/:tableName/data/:id', async (req, res) => {
 
     const primaryKeyColumn = pkResult[0].COLUMN_NAME;
 
-    const query = `DELETE FROM \`${tableName}\` WHERE \`${primaryKeyColumn}\` = ?`;
+    // Check for foreign key constraints
+    const [fkConstraints] = await connection.query(`
+      SELECT
+        TABLE_NAME as referencingTable,
+        COLUMN_NAME as referencingColumn,
+        REFERENCED_TABLE_NAME as referencedTable,
+        REFERENCED_COLUMN_NAME as referencedColumn
+      FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+      WHERE REFERENCED_TABLE_SCHEMA = DATABASE()
+        AND REFERENCED_TABLE_NAME = ?
+        AND REFERENCED_COLUMN_NAME = ?
+    `, [tableName, primaryKeyColumn]);
 
-    const [result] = await connection.query(query, [id]);
-    connection.release();
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Record not found' });
+    // If there are foreign key constraints and force is not true, return an error with details
+    if (fkConstraints.length > 0 && force !== 'true') {
+      connection.release();
+      return res.status(409).json({
+        error: 'Cannot delete record due to foreign key constraints',
+        details: {
+          message: 'This record is referenced by other tables. Deleting it may cause data inconsistency.',
+          constraints: fkConstraints,
+          solution: 'You can either delete the referencing records first, or use force=true parameter to bypass checks (not recommended)'
+        }
+      });
     }
 
-    res.json({ message: 'Record deleted successfully' });
+    let query;
+
+    if (force === 'true') {
+      // Temporarily disable foreign key checks if force is true
+      await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+      query = `DELETE FROM \`${tableName}\` WHERE \`${primaryKeyColumn}\` = ?`;
+    } else {
+      query = `DELETE FROM \`${tableName}\` WHERE \`${primaryKeyColumn}\` = ?`;
+    }
+
+    try {
+      const [result] = await connection.query(query, [id]);
+
+      if (force === 'true') {
+        // Re-enable foreign key checks
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+      }
+
+      if (result.affectedRows === 0) {
+        connection.release();
+        return res.status(404).json({ error: 'Record not found' });
+      }
+
+      connection.release();
+      res.json({ message: 'Record deleted successfully' });
+    } catch (deleteError) {
+      if (force === 'true') {
+        // Make sure to re-enable foreign key checks even if there's an error
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+      }
+
+      connection.release();
+
+      // Check if it's a foreign key constraint error
+      if (deleteError.code === 'ER_ROW_IS_REFERENCED_2') {
+        return res.status(409).json({
+          error: 'Cannot delete record due to foreign key constraints',
+          details: {
+            message: 'This record is referenced by other tables. You need to delete the referencing records first.',
+            solution: 'You can use force=true parameter to bypass checks (not recommended)'
+          }
+        });
+      }
+
+      throw deleteError;
+    }
   } catch (error) {
     console.error(`Error deleting data from table ${tableName}:`, error);
-    res.status(500).json({ error: `Failed to delete data from table ${tableName}` });
+    res.status(500).json({
+      error: `Failed to delete data from table ${tableName}: ${error.message}`,
+      code: error.code
+    });
+  }
+});
+
+// Get referenced table data for foreign keys
+app.get('/api/tables/:tableName/referenced-data/:columnName', async (req, res) => {
+  const { tableName, columnName } = req.params;
+
+  console.log(`Attempting to get referenced data for ${tableName}.${columnName}`);
+
+  try {
+    const connection = await pool.getConnection();
+    console.log(`Connection obtained for referenced data`);
+
+    // Get foreign key information
+    console.log(`Getting foreign key information for ${tableName}.${columnName}`);
+    const [foreignKeys] = await connection.query(`
+      SELECT
+        COLUMN_NAME as \`column\`,
+        REFERENCED_TABLE_NAME as referencedTable,
+        REFERENCED_COLUMN_NAME as referencedColumn
+      FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+        AND COLUMN_NAME = ?
+        AND REFERENCED_TABLE_NAME IS NOT NULL
+    `, [tableName, columnName]);
+
+    console.log(`Found ${foreignKeys.length} foreign key relationships for ${tableName}.${columnName}`);
+
+    if (foreignKeys.length === 0) {
+      connection.release();
+      console.log(`No foreign key relationship found for ${tableName}.${columnName}`);
+      return res.status(404).json({ error: 'No foreign key relationship found for this column' });
+    }
+
+    const fk = foreignKeys[0];
+    console.log(`Foreign key references ${fk.referencedTable}.${fk.referencedColumn}`);
+
+    // Get data from the referenced table
+    console.log(`Getting data from referenced table ${fk.referencedTable}`);
+    const [referencedData] = await connection.query(`
+      SELECT * FROM \`${fk.referencedTable}\`
+      ORDER BY \`${fk.referencedColumn}\`
+      LIMIT 1000
+    `);
+
+    console.log(`Retrieved ${referencedData.length} rows from ${fk.referencedTable}`);
+
+    connection.release();
+    console.log(`Connection released for referenced data`);
+
+    res.json({
+      referencedTable: fk.referencedTable,
+      referencedColumn: fk.referencedColumn,
+      data: referencedData
+    });
+  } catch (error) {
+    console.error(`Error fetching referenced data for ${tableName}.${columnName}:`, error);
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ error: `Failed to fetch referenced data: ${error.message}` });
   }
 });
 
