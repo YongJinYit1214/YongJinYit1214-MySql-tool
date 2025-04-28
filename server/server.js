@@ -70,6 +70,45 @@ app.get('/api/databases', async (req, res) => {
   }
 });
 
+// Create a new database
+app.post('/api/databases', async (req, res) => {
+  const { databaseName } = req.body;
+
+  if (!databaseName) {
+    return res.status(400).json({ error: 'Database name is required' });
+  }
+
+  // Validate database name (only allow alphanumeric characters and underscores)
+  if (!/^[a-zA-Z0-9_]+$/.test(databaseName)) {
+    return res.status(400).json({
+      error: 'Invalid database name. Only letters, numbers, and underscores are allowed.'
+    });
+  }
+
+  try {
+    console.log(`Attempting to create database: ${databaseName}`);
+    const connection = await pool.getConnection();
+
+    // Check if database already exists
+    const [existingDbs] = await connection.query('SHOW DATABASES LIKE ?', [databaseName]);
+    if (existingDbs.length > 0) {
+      connection.release();
+      return res.status(409).json({ error: 'Database already exists' });
+    }
+
+    // Create the database
+    await connection.query(`CREATE DATABASE \`${databaseName}\``);
+    console.log(`Database ${databaseName} created successfully`);
+
+    connection.release();
+    res.status(201).json({ message: `Database ${databaseName} created successfully` });
+  } catch (error) {
+    console.error('Error creating database:', error);
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ error: `Failed to create database: ${error.message}` });
+  }
+});
+
 // Set active database
 app.post('/api/use-database', async (req, res) => {
   const { database } = req.body;

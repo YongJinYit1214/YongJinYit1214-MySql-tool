@@ -15,6 +15,11 @@ export const getDatabases = async () => {
   return response.data;
 };
 
+export const createDatabase = async (databaseName) => {
+  const response = await api.post('/databases', { databaseName });
+  return response.data;
+};
+
 export const useDatabase = async (database) => {
   const response = await api.post('/use-database', { database });
   return response.data;
