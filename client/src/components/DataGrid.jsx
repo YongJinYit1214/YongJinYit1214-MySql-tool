@@ -580,7 +580,8 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
               tableLayout: 'fixed',
               borderRadius: '8px',
               overflow: 'hidden',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)'
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)',
+              backgroundColor: '#0a0a0a'
             }}>
               <thead>
                 <tr>
@@ -589,9 +590,9 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                       key={col.field}
                       style={{
                         padding: '12px 16px',
-                        borderBottom: '1px solid #e2e8f0',
+                        borderBottom: '1px solid #1a1a1a',
                         textAlign: 'left',
-                        backgroundColor: '#f8fafc',
+                        backgroundColor: '#121212',
                         maxWidth: '200px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -599,7 +600,7 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                         cursor: 'pointer',
                         position: 'relative',
                         fontWeight: 600,
-                        color: '#1e293b',
+                        color: '#ffffff',
                         fontSize: '14px'
                       }}
                       title={col.headerName} // Add tooltip to header
@@ -697,14 +698,14 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                   <th
                     style={{
                       padding: '12px 16px',
-                      borderBottom: '1px solid #e2e8f0',
+                      borderBottom: '1px solid #1a1a1a',
                       textAlign: 'left',
-                      backgroundColor: '#f8fafc',
+                      backgroundColor: '#121212',
                       width: '120px',
                       minWidth: '120px',
                       cursor: 'pointer',
                       fontWeight: 600,
-                      color: '#1e293b',
+                      color: '#ffffff',
                       fontSize: '14px'
                     }}
                     title="Actions"
@@ -718,7 +719,7 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                   <tr
                     key={rowIndex}
                     style={{
-                      backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc',
+                      backgroundColor: rowIndex % 2 === 0 ? '#0a0a0a' : '#121212',
                       transition: 'background-color 0.2s ease'
                     }}
                   >
@@ -727,18 +728,19 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                         key={`${rowIndex}-${col.field}`}
                         style={{
                           padding: '12px 16px',
-                          borderBottom: '1px solid #f1f5f9',
+                          borderBottom: '1px solid #1a1a1a',
                           maxWidth: '200px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                           position: 'relative',
                           cursor: 'pointer',
-                          color: '#1e293b',
+                          color: '#ffffff',
                           fontSize: '14px',
+                          fontWeight: 500,
                           transition: 'background-color 0.2s ease',
                           backgroundColor: editingCell && editingCell.rowIndex === rowIndex && editingCell.field === col.field
-                            ? 'rgba(37, 99, 235, 0.05)'
+                            ? 'rgba(59, 130, 246, 0.15)'
                             : 'inherit'
                         }}
                         title={formatValue(row[col.field], '')} // Add tooltip with full content
@@ -818,16 +820,17 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                             }}
                           >
                             {row[col.field] === null || row[col.field] === undefined ?
-                              <span style={{ color: '#999', fontStyle: 'italic' }}>(null)</span> :
+                              <span style={{ color: '#888', fontStyle: 'italic', fontWeight: 400 }}>(null)</span> :
                               formatValue(row[col.field], '')}
                           </Box>
                       </td>
                     ))}
                     <td style={{
                       padding: '12px 16px',
-                      borderBottom: '1px solid #f1f5f9',
+                      borderBottom: '1px solid #1a1a1a',
                       width: '120px',
-                      minWidth: '120px'
+                      minWidth: '120px',
+                      backgroundColor: 'inherit'
                     }}>
                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         <Button

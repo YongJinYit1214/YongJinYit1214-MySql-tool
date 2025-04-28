@@ -17,19 +17,20 @@ html {
 /* AG Grid customizations */
 .ag-theme-alpine {
   --ag-header-height: 48px;
-  --ag-header-foreground-color: #f1f5f9;
-  --ag-header-background-color: #1a1a1a;
+  --ag-header-foreground-color: #ffffff;
+  --ag-header-background-color: #121212;
   --ag-row-hover-color: rgba(59, 130, 246, 0.15);
   --ag-selected-row-background-color: rgba(59, 130, 246, 0.2);
   --ag-font-size: 14px;
   --ag-font-family: 'Inter', sans-serif;
-  --ag-border-color: #2d2d2d;
+  --ag-border-color: #1a1a1a;
   --ag-cell-horizontal-padding: 16px;
   --ag-cell-vertical-padding: 12px;
-  --ag-row-border-color: #222222;
-  --ag-background-color: #1a1a1a;
-  --ag-foreground-color: #f1f5f9;
-  --ag-odd-row-background-color: #151515;
+  --ag-row-border-color: #1a1a1a;
+  --ag-background-color: #0a0a0a;
+  --ag-foreground-color: #ffffff;
+  --ag-odd-row-background-color: #0a0a0a;
+  --ag-even-row-background-color: #121212;
   height: 100%;
   width: 100%;
   display: flex;
@@ -185,11 +186,11 @@ td[title]:hover, th[title]:hover {
 th[title] {
   position: relative;
   font-weight: 600;
-  color: #f1f5f9;
+  color: #ffffff;
   padding: 12px 16px;
   text-align: left;
   border-bottom: 1px solid #2d2d2d;
-  background-color: #1a1a1a;
+  background-color: #121212;
 }
 
 th[title]::after {
@@ -216,14 +217,15 @@ table {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  background-color: #1a1a1a;
+  background-color: #0a0a0a;
 }
 
 td {
   padding: 12px 16px;
-  border-bottom: 1px solid #222222;
-  color: #f1f5f9;
+  border-bottom: 1px solid #1a1a1a;
+  color: #ffffff;
   transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 tr:last-child td {
@@ -231,11 +233,11 @@ tr:last-child td {
 }
 
 tr:nth-child(even) {
-  background-color: #1a1a1a;
+  background-color: #121212;
 }
 
 tr:nth-child(odd) {
-  background-color: #151515;
+  background-color: #0a0a0a;
 }
 
 tr:hover td {
@@ -345,11 +347,12 @@ tr:hover td {
 
 /* Card styles */
 .card {
-  background-color: white;
+  background-color: #0a0a0a;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
   padding: 24px;
   transition: all 0.3s ease;
+  color: #ffffff;
 }
 
 .card:hover {
@@ -366,7 +369,7 @@ tr:hover td {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #1e293b;
+  color: #ffffff;
 }
 
 .form-control input,
@@ -374,10 +377,12 @@ tr:hover td {
 .form-control textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #1a1a1a;
   border-radius: 6px;
   font-size: 14px;
   transition: all 0.2s ease;
+  background-color: #121212;
+  color: #ffffff;
 }
 
 .form-control input:focus,
@@ -392,19 +397,25 @@ tr:hover td {
 .MuiDialog-paper {
   border-radius: 12px !important;
   overflow: hidden !important;
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
 }
 
 .MuiDialogTitle-root {
-  background-color: #f8fafc !important;
+  background-color: #121212 !important;
   padding: 16px 24px !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #1a1a1a !important;
+  color: #ffffff !important;
 }
 
 .MuiDialogContent-root {
   padding: 24px !important;
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
 }
 
 .MuiDialogActions-root {
   padding: 16px 24px !important;
-  border-top: 1px solid #e2e8f0 !important;
+  border-top: 1px solid #1a1a1a !important;
+  background-color: #121212 !important;
 }
