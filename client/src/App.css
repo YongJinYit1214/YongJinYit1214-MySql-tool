@@ -1,0 +1,127 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* AG Grid customizations */
+.ag-theme-alpine {
+  --ag-header-height: 40px;
+  --ag-header-foreground-color: #333;
+  --ag-header-background-color: #f5f5f5;
+  --ag-row-hover-color: rgba(33, 150, 243, 0.1);
+  --ag-selected-row-background-color: rgba(33, 150, 243, 0.2);
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ag-root-wrapper {
+  flex: 1;
+  min-height: 0;
+}
+
+.ag-center-cols-container {
+  width: 100% !important;
+}
+
+/* Custom button styles for AG Grid */
+.btn-delete {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-delete:hover {
+  background-color: #d32f2f;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Table cell hover effect */
+td[title]:hover, th[title]:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+  transition: background-color 0.2s;
+}
+
+/* Table header styles */
+th[title] {
+  position: relative;
+}
+
+th[title]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: rgba(33, 150, 243, 0.5);
+  transform: scaleX(0);
+  transition: transform 0.2s;
+}
+
+th[title]:hover::after {
+  transform: scaleX(1);
+}
+
+/* Popup styles */
+.cell-content-popup {
+  position: fixed;
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  z-index: 1000;
+  max-width: 450px;
+  min-width: 250px;
+  word-break: break-word;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.cell-content-popup strong {
+  color: #333;
+}
+
+.cell-content-popup button {
+  margin-top: 15px;
+  padding: 6px 12px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cell-content-popup button:hover {
+  background-color: #e0e0e0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
