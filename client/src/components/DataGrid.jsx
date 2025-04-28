@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -16,8 +16,7 @@ import {
   Select,
   FormControl,
   InputLabel,
-  FormHelperText,
-  useTheme
+  FormHelperText
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -33,7 +32,6 @@ import {
 import { formatValue, getEditorType, convertValueForColumn } from '../utils/helpers';
 
 const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
-  const theme = useTheme();
   const [rowData, setRowData] = useState([]);
   const [columnDefs, setColumnDefs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -1087,7 +1085,7 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                     ...(isDateTimeField && {
                       '& .MuiInputLabel-root': {
                         transform: 'translate(14px, -9px) scale(0.75)',
-                        background: theme.palette.background.paper,
+                        background: '#2d2d2d', // Dark theme background
                         padding: '0 8px',
                       },
                       '& .MuiInputLabel-shrink': {
@@ -1271,7 +1269,7 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                       ...(isDateTimeField && {
                         '& .MuiInputLabel-root': {
                           transform: 'translate(14px, -9px) scale(0.75)',
-                          background: theme.palette.background.paper,
+                          background: '#2d2d2d', // Dark theme background
                           padding: '0 8px',
                         },
                         '& .MuiInputLabel-shrink': {

@@ -470,35 +470,31 @@ const TableList = ({ database, onTableSelect }) => {
       <Box sx={{
         p: 2,
         borderBottom: '1px solid',
-        borderColor: 'divider',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
+        borderColor: 'divider'
       }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
           Tables in {database}
         </Typography>
 
-        <Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCreateDialog}
-            sx={{
-              borderRadius: 2,
-              fontWeight: 500,
-              boxShadow: 'none',
-              px: 2,
-              py: 1,
-              '&:hover': {
-                boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
-              }
-            }}
-            disableElevation
-          >
-            Create Table
-          </Button>
-        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenCreateDialog}
+          sx={{
+            borderRadius: 2,
+            fontWeight: 500,
+            boxShadow: 'none',
+            px: 2,
+            py: 1,
+            width: '100%',
+            '&:hover': {
+              boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
+            }
+          }}
+          disableElevation
+        >
+          Create Table
+        </Button>
       </Box>
 
       {tables.length === 0 ? (
