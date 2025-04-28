@@ -40,9 +40,10 @@ const theme = createTheme({
       dark: '#059669',
     },
     background: {
-      default: '#1a1a1a', // Dark gray (IDE-like)
-      paper: '#2d2d2d', // Slightly lighter gray
-      lighter: '#3d3d3d', // Even lighter for hover states
+      default: '#121212', // Very dark gray (IDE-like)
+      paper: '#1a1a1a', // Dark gray
+      lighter: '#2d2d2d', // Slightly lighter gray
+      dark: '#0a0a0a', // Even darker for some elements
     },
     text: {
       primary: '#f1f5f9',
@@ -150,15 +151,17 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.1), 0px 1px 2px rgba(0, 0, 0, 0.06)',
+          boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.3), 0px 1px 2px rgba(0, 0, 0, 0.2)',
+          backgroundColor: '#1a1a1a',
         },
       },
     },
     MuiDialog: {
       styleOverrides: {
         paper: {
-          boxShadow: '0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          boxShadow: '0px 20px 25px -5px rgba(0, 0, 0, 0.3), 0px 10px 10px -5px rgba(0, 0, 0, 0.2)',
           borderRadius: 12,
+          backgroundColor: '#2d2d2d',
         },
       },
     },
