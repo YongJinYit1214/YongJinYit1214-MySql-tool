@@ -1,7 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { AgGridReact } from 'ag-grid-react';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -15,18 +12,16 @@ import {
   DialogActions,
   TextField,
   Pagination,
-  Stack,
   MenuItem,
   Select,
   FormControl,
   InputLabel,
   FormHelperText,
-  Divider
+  useTheme
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditIcon from '@mui/icons-material/Edit';
 import {
   getTableData,
   getTableStructure,
@@ -38,7 +33,7 @@ import {
 import { formatValue, getEditorType, convertValueForColumn } from '../utils/helpers';
 
 const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
-  const gridRef = useRef();
+  const theme = useTheme();
   const [rowData, setRowData] = useState([]);
   const [columnDefs, setColumnDefs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -1071,6 +1066,8 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
               }
 
               // Regular field (not a foreign key)
+              const isDateTimeField = typeof inputType === 'string' && inputType === 'datetime-local';
+
               return (
                 <TextField
                   key={column.Field}
@@ -1084,7 +1081,23 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                   helperText={`${column.Type}${isRequired ? ' (Required)' : ''}${isAutoIncrement ? ' (Auto-increment)' : ''}`}
                   disabled={isAutoIncrement}
                   error={isRequired && (!newRecord[column.Field] || newRecord[column.Field] === '')}
-                  sx={{ mb: 1 }}
+                  sx={{
+                    mb: 1,
+                    // Fix for datetime-local fields to prevent label overlap
+                    ...(isDateTimeField && {
+                      '& .MuiInputLabel-root': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                        background: theme.palette.background.paper,
+                        padding: '0 8px',
+                      },
+                      '& .MuiInputLabel-shrink': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                      }
+                    })
+                  }}
+                  InputLabelProps={{
+                    shrink: isDateTimeField ? true : undefined,
+                  }}
                 />
               );
             })}
@@ -1239,6 +1252,7 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
 
                 // For regular fields, determine the input type
                 const inputType = column ? getEditorType(column.Type) : 'text';
+                const isDateTimeField = typeof inputType === 'string' && inputType === 'datetime-local';
 
                 return (
                   <TextField
@@ -1251,7 +1265,23 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                     type={typeof inputType === 'string' ? inputType : 'text'}
                     multiline={column && (column.Type.includes('text') || column.Type.includes('json'))}
                     rows={column && (column.Type.includes('text') || column.Type.includes('json')) ? 4 : 1}
-                    sx={{ mt: 1 }}
+                    sx={{
+                      mt: 1,
+                      // Fix for datetime-local fields to prevent label overlap
+                      ...(isDateTimeField && {
+                        '& .MuiInputLabel-root': {
+                          transform: 'translate(14px, -9px) scale(0.75)',
+                          background: theme.palette.background.paper,
+                          padding: '0 8px',
+                        },
+                        '& .MuiInputLabel-shrink': {
+                          transform: 'translate(14px, -9px) scale(0.75)',
+                        }
+                      })
+                    }}
+                    InputLabelProps={{
+                      shrink: isDateTimeField ? true : undefined,
+                    }}
                     helperText={column ? `Field type: ${column.Type}` : ''}
                   />
                 );

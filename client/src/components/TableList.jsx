@@ -479,16 +479,17 @@ const TableList = ({ database, onTableSelect }) => {
           Tables in {database}
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box>
           <Button
             variant="contained"
-            size="small"
             startIcon={<AddIcon />}
             onClick={handleOpenCreateDialog}
             sx={{
               borderRadius: 2,
               fontWeight: 500,
               boxShadow: 'none',
+              px: 2,
+              py: 1,
               '&:hover': {
                 boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
               }

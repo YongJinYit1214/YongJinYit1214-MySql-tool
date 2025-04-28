@@ -9,19 +9,25 @@ import {
   Typography,
   AppBar,
   Toolbar,
-  Button
+  Button,
+  IconButton,
+  Tooltip,
+  useTheme
 } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DatabaseSelector from '../components/DatabaseSelector';
 import TableList from '../components/TableList';
 import DataGrid from '../components/DataGrid';
 import QueryEditor from '../components/QueryEditor';
 
-const MainPage = () => {
+const MainPage = ({ toggleColorMode, mode }) => {
   const [database, setDatabase] = useState(null);
   const [selectedTable, setSelectedTable] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const theme = useTheme();
 
   const handleDatabaseSelected = (db) => {
     setDatabase(db);
@@ -45,6 +51,17 @@ const MainPage = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             MySQL Visualization Tool
           </Typography>
+
+          {/* Theme toggle button */}
+          <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
+            <IconButton
+              onClick={toggleColorMode}
+              color="inherit"
+              sx={{ mr: 2 }}
+            >
+              {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+            </IconButton>
+          </Tooltip>
 
           {database && (
             <Button
