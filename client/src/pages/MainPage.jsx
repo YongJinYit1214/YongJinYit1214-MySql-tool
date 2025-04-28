@@ -9,14 +9,17 @@ import {
   Typography,
   AppBar,
   Toolbar,
-  Button
+  Button,
+  Link
 } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import InfoIcon from '@mui/icons-material/Info';
 import DatabaseSelector from '../components/DatabaseSelector';
 import TableList from '../components/TableList';
 import DataGrid from '../components/DataGrid';
 import QueryEditor from '../components/QueryEditor';
+import { Link as RouterLink } from 'react-router-dom';
 
 const MainPage = () => {
   const [database, setDatabase] = useState(null);
@@ -45,6 +48,21 @@ const MainPage = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             MySQL Visualization Tool
           </Typography>
+
+          <Button
+            component={RouterLink}
+            to="/about"
+            color="inherit"
+            startIcon={<InfoIcon />}
+            sx={{
+              mr: 2,
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.1)'
+              }
+            }}
+          >
+            About
+          </Button>
 
           {database && (
             <Button
