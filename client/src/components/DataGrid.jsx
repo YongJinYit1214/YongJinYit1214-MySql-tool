@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -16,11 +16,17 @@ import {
   Select,
   FormControl,
   InputLabel,
-  FormHelperText
+  FormHelperText,
+  InputAdornment,
+  IconButton,
+  TableSortLabel,
+  Tooltip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import {
   getTableData,
   getTableStructure,
@@ -55,6 +61,11 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
     total: 0,
     totalPages: 0
   });
+
+  // Search and sort state
+  const [searchText, setSearchText] = useState('');
+  const [orderBy, setOrderBy] = useState('');
+  const [order, setOrder] = useState('asc');
 
   // Fetch table structure and data when table changes
   useEffect(() => {
@@ -202,6 +213,60 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
       setLoading(false);
     }
   };
+
+  // Handle search
+  const handleSearch = (event) => {
+    setSearchText(event.target.value);
+  };
+
+  // Handle sort request
+  const handleRequestSort = (column) => {
+    const isAsc = orderBy === column && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(column);
+  };
+
+  // Apply search and sorting to the data
+  const filteredAndSortedData = useMemo(() => {
+    if (!rowData || rowData.length === 0) return [];
+
+    // Apply search filter
+    let filteredData = rowData;
+    if (searchText) {
+      filteredData = rowData.filter(row => {
+        return Object.values(row).some(value => {
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(searchText.toLowerCase());
+        });
+      });
+    }
+
+    // Apply sorting
+    if (orderBy) {
+      filteredData = [...filteredData].sort((a, b) => {
+        const aValue = a[orderBy];
+        const bValue = b[orderBy];
+
+        // Handle null/undefined values
+        if (aValue === null || aValue === undefined) return order === 'asc' ? -1 : 1;
+        if (bValue === null || bValue === undefined) return order === 'asc' ? 1 : -1;
+
+        // Compare based on data type
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return order === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+
+        // Default string comparison
+        const aString = String(aValue).toLowerCase();
+        const bString = String(bValue).toLowerCase();
+        return order === 'asc'
+          ? aString.localeCompare(bString)
+          : bString.localeCompare(aString);
+      });
+    }
+
+    return filteredData;
+  }, [rowData, searchText, orderBy, order]);
 
   const handleCellValueChanged = async (params) => {
     if (!primaryKey || !params.data[primaryKey]) {
@@ -496,7 +561,32 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
           </Typography>
         </Box>
 
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <TextField
+            placeholder="Search..."
+            size="small"
+            value={searchText}
+            onChange={handleSearch}
+            sx={{ mr: 2, width: 200 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+              endAdornment: searchText && (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchText('')}
+                    edge="end"
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+          />
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
@@ -605,7 +695,10 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                       }}
                       title={col.headerName} // Add tooltip to header
                       onClick={(e) => {
-                        // Show popup with full header name on click
+                        // First handle sorting
+                        handleRequestSort(col.field);
+
+                        // Then show popup with full header name on click
                         if (col.headerName) { // Show popup for all headers
                           const popup = document.createElement('div');
                           popup.className = 'cell-content-popup';
@@ -692,7 +785,14 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                         }
                       }}
                     >
-                      {col.headerName}
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {col.headerName}
+                        {orderBy === col.field && (
+                          <Box component="span" sx={{ ml: 1, color: 'primary.main' }}>
+                            {order === 'asc' ? '▲' : '▼'}
+                          </Box>
+                        )}
+                      </Box>
                     </th>
                   ))}
                   <th
@@ -715,7 +815,7 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                 </tr>
               </thead>
               <tbody>
-                {rowData.map((row, rowIndex) => (
+                {filteredAndSortedData.map((row, rowIndex) => (
                   <tr
                     key={rowIndex}
                     style={{
@@ -857,7 +957,8 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
           </Box>
         ) : (
           <Typography variant="body1" sx={{ p: 2 }}>
-            {loading ? 'Loading data...' : 'No data available'}
+            {loading ? 'Loading data...' :
+              searchText ? `No results found for "${searchText}"` : 'No data available'}
           </Typography>
         )}
       </Box>
@@ -872,8 +973,10 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
         bgcolor: 'background.paper'
       }}>
         <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-          {pagination.total > 0 ? (
-            `Showing ${(pagination.page - 1) * pagination.limit + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} records`
+          {filteredAndSortedData.length > 0 ? (
+            searchText ?
+              `Showing ${filteredAndSortedData.length} filtered results out of ${rowData.length} total records` :
+              `Showing ${(pagination.page - 1) * pagination.limit + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} records`
           ) : (
             'No records found'
           )}
