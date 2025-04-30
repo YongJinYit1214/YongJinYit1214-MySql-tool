@@ -20,7 +20,11 @@ import {
   Chip,
   Divider,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   FilterAlt as FilterIcon,
@@ -29,12 +33,13 @@ import {
   Refresh as RefreshIcon,
   Close as CloseIcon,
   Search as SearchIcon,
-  MoreVert as MoreVertIcon
+  MoreVert as MoreVertIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
-import { formatValue } from '../utils/helpers';
+import { formatValue, convertValueForColumn, getEditorType } from '../utils/helpers';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const EnhancedQueryResults = ({ result, loading, error }) => {
+const EnhancedQueryResults = ({ result, loading, error, onUpdateData }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [orderBy, setOrderBy] = useState('');
@@ -43,7 +48,6 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
   const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
   const [filterColumn, setFilterColumn] = useState('');
   const [showChart, setShowChart] = useState(false);
-  const [chartType, setChartType] = useState('bar');
   const [chartMenuAnchor, setChartMenuAnchor] = useState(null);
   const [chartConfig, setChartConfig] = useState({
     xAxis: '',
@@ -52,17 +56,23 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
   const [searchText, setSearchText] = useState('');
   const [exportMenuAnchor, setExportMenuAnchor] = useState(null);
 
+  // Edit functionality
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCell, setEditingCell] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [editingRow, setEditingRow] = useState(null);
+
   // Determine if the result contains aggregate data (e.g., COUNT, SUM, AVG)
   const hasAggregateData = useMemo(() => {
     if (!result || !Array.isArray(result) || result.length === 0) return false;
-    
+
     const columns = Object.keys(result[0]);
     const aggregateFunctions = ['count', 'sum', 'avg', 'min', 'max'];
-    
-    return columns.some(col => 
-      aggregateFunctions.some(fn => 
-        col.toLowerCase().includes(fn) || 
-        col.includes('(') || 
+
+    return columns.some(col =>
+      aggregateFunctions.some(fn =>
+        col.toLowerCase().includes(fn) ||
+        col.includes('(') ||
         col.includes(')')
       )
     );
@@ -77,7 +87,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
   // Apply sorting and filtering to the result
   const processedData = useMemo(() => {
     if (!result || !Array.isArray(result) || result.length === 0) return [];
-    
+
     // Apply filters
     let filteredData = result;
     if (Object.keys(filters).length > 0) {
@@ -90,7 +100,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
         });
       });
     }
-    
+
     // Apply global search
     if (searchText) {
       filteredData = filteredData.filter(row => {
@@ -100,31 +110,31 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
         });
       });
     }
-    
+
     // Apply sorting
     if (orderBy) {
       filteredData = [...filteredData].sort((a, b) => {
         const aValue = a[orderBy];
         const bValue = b[orderBy];
-        
+
         // Handle null/undefined values
         if (aValue === null || aValue === undefined) return order === 'asc' ? -1 : 1;
         if (bValue === null || bValue === undefined) return order === 'asc' ? 1 : -1;
-        
+
         // Compare based on data type
         if (typeof aValue === 'number' && typeof bValue === 'number') {
           return order === 'asc' ? aValue - bValue : bValue - aValue;
         }
-        
+
         // Default string comparison
         const aString = String(aValue).toLowerCase();
         const bString = String(bValue).toLowerCase();
-        return order === 'asc' 
+        return order === 'asc'
           ? aString.localeCompare(bString)
           : bString.localeCompare(aString);
       });
     }
-    
+
     return filteredData;
   }, [result, filters, orderBy, order, searchText]);
 
@@ -136,13 +146,13 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
   // Chart data preparation
   const chartData = useMemo(() => {
     if (!showChart || !chartConfig.xAxis || !chartConfig.yAxis) return [];
-    
+
     // Group data by xAxis and calculate yAxis values
     const groupedData = {};
     processedData.forEach(row => {
       const xValue = row[chartConfig.xAxis];
       const yValue = parseFloat(row[chartConfig.yAxis]);
-      
+
       if (xValue !== null && xValue !== undefined && !isNaN(yValue)) {
         const key = String(xValue);
         if (!groupedData[key]) {
@@ -151,7 +161,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
         groupedData[key].value += yValue;
       }
     });
-    
+
     return Object.values(groupedData);
   }, [showChart, chartConfig, processedData]);
 
@@ -204,9 +214,9 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
   // Export data as CSV
   const exportAsCSV = () => {
     if (!processedData.length) return;
-    
+
     const headers = columns.join(',');
-    const rows = processedData.map(row => 
+    const rows = processedData.map(row =>
       columns.map(col => {
         const value = row[col];
         // Handle values that need quotes (strings with commas, etc.)
@@ -216,7 +226,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
         return value === null || value === undefined ? '' : value;
       }).join(',')
     ).join('\n');
-    
+
     const csv = `${headers}\n${rows}`;
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -226,14 +236,14 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     setExportMenuAnchor(null);
   };
 
   // Export data as JSON
   const exportAsJSON = () => {
     if (!processedData.length) return;
-    
+
     const json = JSON.stringify(processedData, null, 2);
     const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -243,7 +253,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     setExportMenuAnchor(null);
   };
 
@@ -259,7 +269,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
   // Detect numeric columns for chart options
   const numericColumns = useMemo(() => {
     if (!result || !Array.isArray(result) || result.length === 0) return [];
-    
+
     return columns.filter(col => {
       // Check if at least one non-null value is a number
       return result.some(row => {
@@ -285,7 +295,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
             <TableCell
               key={column}
               sortDirection={orderBy === column ? order : false}
-              sx={{ 
+              sx={{
                 fontWeight: 'bold',
                 whiteSpace: 'nowrap',
                 backgroundColor: 'background.paper',
@@ -302,7 +312,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
                 >
                   {column}
                 </TableSortLabel>
-                
+
                 {filters[column] && (
                   <Chip
                     size="small"
@@ -311,7 +321,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
                     sx={{ ml: 1 }}
                   />
                 )}
-                
+
                 <IconButton
                   size="small"
                   onClick={(e) => handleFilterMenuOpen(e, column)}
@@ -325,6 +335,45 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
         </TableRow>
       </TableHead>
     );
+  };
+
+  // Start editing a cell
+  const handleStartEditing = (rowIndex, field, value, row) => {
+    setEditingCell({ rowIndex, field });
+    setEditValue(value !== null && value !== undefined ? String(value) : '');
+    setEditingRow(row);
+    setIsEditDialogOpen(true);
+  };
+
+  // Cancel editing
+  const handleCancelEditing = () => {
+    setEditingCell(null);
+    setEditValue('');
+    setEditingRow(null);
+    setIsEditDialogOpen(false);
+  };
+
+  // Save the edited cell value
+  const handleSaveEdit = async (row) => {
+    if (!editingCell || !row) return;
+
+    try {
+      const { field } = editingCell;
+
+      // If onUpdateData is provided, call it with the updated data
+      if (onUpdateData) {
+        onUpdateData(row, field, editValue);
+      }
+
+      // Reset editing state
+      setEditingCell(null);
+      setEditValue('');
+      setEditingRow(null);
+      setIsEditDialogOpen(false);
+    } catch (err) {
+      console.error('Error updating record:', err);
+      handleCancelEditing();
+    }
   };
 
   // Render the table body
@@ -348,13 +397,89 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
         {paginatedData.map((row, rowIndex) => (
           <TableRow key={rowIndex} hover>
             {columns.map((column) => (
-              <TableCell 
+              <TableCell
                 key={`${rowIndex}-${column}`}
-                sx={{ 
+                sx={{
                   maxWidth: '300px',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer'
+                }}
+                onClick={(e) => {
+                  // Show popup with full content and edit button
+                  const value = row[column];
+                  const isNull = value === null || value === undefined;
+                  const content = isNull ? '(null)' : formatValue(value, '');
+
+                  // Create popup
+                  const popup = document.createElement('div');
+                  popup.className = 'cell-content-popup';
+                  popup.style.left = `${e.clientX}px`;
+                  popup.style.top = `${e.clientY}px`;
+
+                  // Create header with column name
+                  const header = document.createElement('strong');
+                  header.innerText = column + ':';
+                  popup.appendChild(header);
+
+                  // Add line breaks
+                  popup.appendChild(document.createElement('br'));
+                  popup.appendChild(document.createElement('br'));
+
+                  // Add content
+                  const contentElement = document.createElement('span');
+                  if (isNull) {
+                    contentElement.innerText = '(null)';
+                    contentElement.style.color = '#999';
+                    contentElement.style.fontStyle = 'italic';
+                  } else {
+                    contentElement.innerText = content;
+                  }
+                  popup.appendChild(contentElement);
+
+                  // Add buttons container
+                  const buttonsContainer = document.createElement('div');
+                  buttonsContainer.style.display = 'flex';
+                  buttonsContainer.style.justifyContent = 'center';
+                  buttonsContainer.style.gap = '10px';
+                  buttonsContainer.style.marginTop = '15px';
+
+                  // Add edit button
+                  const editBtn = document.createElement('button');
+                  editBtn.innerText = 'Edit';
+                  editBtn.className = 'edit-button';
+                  editBtn.onclick = (event) => {
+                    event.stopPropagation();
+                    document.body.removeChild(popup);
+                    handleStartEditing(rowIndex, column, row[column], row);
+                  };
+                  buttonsContainer.appendChild(editBtn);
+
+                  // Add close button
+                  const closeBtn = document.createElement('button');
+                  closeBtn.innerText = 'Close';
+                  closeBtn.style.padding = '8px 16px';
+                  closeBtn.style.border = '1px solid #ccc';
+                  closeBtn.style.borderRadius = '4px';
+                  closeBtn.style.cursor = 'pointer';
+                  closeBtn.onclick = () => document.body.removeChild(popup);
+                  buttonsContainer.appendChild(closeBtn);
+
+                  popup.appendChild(document.createElement('br'));
+                  popup.appendChild(buttonsContainer);
+
+                  // Remove popup when clicking outside
+                  document.addEventListener('click', function removePopup(event) {
+                    if (!popup.contains(event.target) && event.target !== e.target) {
+                      if (document.body.contains(popup)) {
+                        document.body.removeChild(popup);
+                      }
+                      document.removeEventListener('click', removePopup);
+                    }
+                  });
+
+                  document.body.appendChild(popup);
                 }}
                 title={formatValue(row[column])}
               >
@@ -433,7 +558,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
           <Typography variant="h6">
             Query Results ({processedData.length} rows)
           </Typography>
-          
+
           <Box sx={{ display: 'flex', gap: 1 }}>
             {/* Search field */}
             <TextField
@@ -451,7 +576,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
               }}
               sx={{ width: 200 }}
             />
-            
+
             {/* Chart button */}
             {numericColumns.length > 0 && (
               <>
@@ -465,7 +590,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
                     Chart
                   </Button>
                 </Tooltip>
-                
+
                 <Menu
                   anchorEl={chartMenuAnchor}
                   open={Boolean(chartMenuAnchor)}
@@ -491,7 +616,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
                         <MenuItem key={col} value={col}>{col}</MenuItem>
                       ))}
                     </TextField>
-                    
+
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       Y-Axis (Value):
                     </Typography>
@@ -507,7 +632,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
                         <MenuItem key={col} value={col}>{col}</MenuItem>
                       ))}
                     </TextField>
-                    
+
                     <Button
                       variant="contained"
                       fullWidth
@@ -520,7 +645,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
                 </Menu>
               </>
             )}
-            
+
             {/* Export button */}
             <Tooltip title="Export Data">
               <Button
@@ -532,7 +657,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
                 Export
               </Button>
             </Tooltip>
-            
+
             <Menu
               anchorEl={exportMenuAnchor}
               open={Boolean(exportMenuAnchor)}
@@ -541,7 +666,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
               <MenuItem onClick={exportAsCSV}>Export as CSV</MenuItem>
               <MenuItem onClick={exportAsJSON}>Export as JSON</MenuItem>
             </Menu>
-            
+
             {/* Reset filters button */}
             {(Object.keys(filters).length > 0 || orderBy || searchText) && (
               <Tooltip title="Reset Filters">
@@ -557,7 +682,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
             )}
           </Box>
         </Box>
-        
+
         {/* Filter menu */}
         <Menu
           anchorEl={filterMenuAnchor}
@@ -597,10 +722,10 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
             </Box>
           </Box>
         </Menu>
-        
+
         {/* Show chart if enabled */}
         {renderChart()}
-        
+
         {/* Results table */}
         <TableContainer sx={{ maxHeight: 600 }}>
           <Table stickyHeader size="small">
@@ -608,7 +733,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
             {renderTableBody()}
           </Table>
         </TableContainer>
-        
+
         {/* Pagination */}
         <TablePagination
           rowsPerPageOptions={[10, 25, 50, 100]}
@@ -623,7 +748,7 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
           }}
         />
       </Paper>
-      
+
       {/* Show hint for aggregate data */}
       {hasAggregateData && (
         <Alert severity="info" sx={{ mb: 2 }}>
@@ -632,6 +757,105 @@ const EnhancedQueryResults = ({ result, loading, error }) => {
           </Typography>
         </Alert>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={isEditDialogOpen}
+        onClose={handleCancelEditing}
+        maxWidth="md"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 3,
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          py: 2,
+          px: 3
+        }}>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            Edit Field
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ py: 3, px: 3 }}>
+          {editingCell && editingRow && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                Editing {editingCell.field} for row {editingCell.rowIndex + 1}
+              </Typography>
+
+              <Box sx={{
+                p: 2,
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                mb: 3
+              }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  <strong>Current Value:</strong> {
+                    editingRow[editingCell.field] === null || editingRow[editingCell.field] === undefined
+                      ? <span style={{ fontStyle: 'italic', color: '#999' }}>(null)</span>
+                      : formatValue(editingRow[editingCell.field], '')
+                  }
+                </Typography>
+              </Box>
+
+              <TextField
+                label="New Value"
+                variant="outlined"
+                fullWidth
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                autoFocus
+                multiline={editingRow[editingCell.field] && String(editingRow[editingCell.field]).length > 50}
+                rows={editingRow[editingCell.field] && String(editingRow[editingCell.field]).length > 50 ? 4 : 1}
+                sx={{ mt: 1 }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          px: 3,
+          py: 2
+        }}>
+          <Button
+            onClick={handleCancelEditing}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 500
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleSaveEdit(editingRow)}
+            variant="contained"
+            color="primary"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 600,
+              boxShadow: 'none',
+              '&:hover': {
+                boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
+              }
+            }}
+            disableElevation
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -886,6 +886,24 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                               }
                               popup.appendChild(contentElement);
 
+                              // Add buttons container
+                              const buttonsContainer = document.createElement('div');
+                              buttonsContainer.style.display = 'flex';
+                              buttonsContainer.style.justifyContent = 'center';
+                              buttonsContainer.style.gap = '10px';
+                              buttonsContainer.style.marginTop = '15px';
+
+                              // Add edit button
+                              const editBtn = document.createElement('button');
+                              editBtn.innerText = 'Edit';
+                              editBtn.className = 'edit-button';
+                              editBtn.onclick = (event) => {
+                                event.stopPropagation();
+                                document.body.removeChild(popup);
+                                handleStartEditing(rowIndex, col.field, row[col.field], row);
+                              };
+                              buttonsContainer.appendChild(editBtn);
+
                               // Add close button
                               const closeBtn = document.createElement('button');
                               closeBtn.innerText = 'Close';
@@ -894,13 +912,6 @@ const DataGrid = ({ database, tableName, onBackToTables = () => {} }) => {
                               closeBtn.style.borderRadius = '4px';
                               closeBtn.style.cursor = 'pointer';
                               closeBtn.onclick = () => document.body.removeChild(popup);
-
-                              // Add buttons container
-                              const buttonsContainer = document.createElement('div');
-                              buttonsContainer.style.display = 'flex';
-                              buttonsContainer.style.justifyContent = 'center';
-                              buttonsContainer.style.marginTop = '15px';
-
                               buttonsContainer.appendChild(closeBtn);
 
                               popup.appendChild(document.createElement('br'));
